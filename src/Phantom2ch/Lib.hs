@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE LambdaCase #-}
 module Phantom2ch.Lib
     ( someFunc
     ) where
@@ -9,7 +10,7 @@ import System.Process (readProcess)
 import Data.Attoparsec.Text
 import Data.Aeson
 import Control.Applicative
-import System.Directory (getUserDocumentsDirectory, createDirectoryIfMissing)
+import System.Directory (getUserDocumentsDirectory, createDirectoryIfMissing, doesFileExist)
 import qualified Data.ByteString as B (writeFile, ByteString)
 import Data.FileEmbed (embedFile)
 import System.FilePath.Posix (joinPath, dropFileName)
@@ -19,6 +20,7 @@ someFunc = putStrLn "someFunc"
 
 resource :: B.ByteString
 resource = $(embedFile "res/req.js")
+-- resource = $(embedFile "src/Phantom2ch/res/req.js")
 
 tempFilePath :: IO FilePath
 tempFilePath = do
@@ -28,8 +30,11 @@ tempFilePath = do
 spitJS :: IO FilePath -> B.ByteString -> IO ()
 spitJS filepath content = do
   path <- filepath
-  createDirectoryIfMissing True (dropFileName path)
-  B.writeFile path content
+  doesFileExist path >>= \case
+            True ->  return ()
+            False -> do
+              createDirectoryIfMissing True (dropFileName path)
+              B.writeFile path content
 
 bbsMenu url = do
   let x = readProcess "phantomjs" ["/tmp/webp.js"] []
